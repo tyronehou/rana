@@ -3,16 +3,19 @@ import { PDFUploader } from './components/PDFUploader'
 import { PDFViewer } from './components/PDFViewer'
 import { Sidebar } from './components/Sidebar'
 import { SidebarPanel, PanelType, Bookmark } from './components/SidebarPanel'
+import { addBookmarksToPdf, downloadPdf } from './utils/pdfBookmarks'
 
 function App() {
   const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | null>(null)
   const [pageNumber, setPageNumber] = useState<number>(1)
   const [numPages, setNumPages] = useState<number>(0)
   const [activePanel, setActivePanel] = useState<PanelType>(null)
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = (file: File, handle: FileSystemFileHandle | null) => {
     setPdfFile(file)
+    setFileHandle(handle)
     setPageNumber(1)
     setNumPages(0)
     setBookmarks([])
@@ -27,6 +30,29 @@ function App() {
         label: label || `Page ${page}`,
       }
       setBookmarks((prev) => [...prev, newBookmark].sort((a, b) => a.page - b.page))
+    }
+  }
+
+  const handleSavePdf = async () => {
+    await saveBookmarksToPdf(bookmarks)
+  }
+
+  const saveBookmarksToPdf = async (updatedBookmarks: Bookmark[]) => {
+    if (!pdfFile) return
+    try {
+      const pdfBytes = await addBookmarksToPdf(pdfFile, updatedBookmarks)
+
+      if (fileHandle) {
+        const writable = await fileHandle.createWritable()
+        await writable.write(pdfBytes as BlobPart)
+        await writable.close()
+        const updatedFile = await fileHandle.getFile()
+        setPdfFile(updatedFile)
+      } else {
+        downloadPdf(pdfBytes, pdfFile.name)
+      }
+    } catch (error) {
+      console.error('Failed to save PDF:', error)
     }
   }
 
@@ -121,10 +147,20 @@ function App() {
             {/* Mouth line */}
             <path d="M24 28 Q32 32 40 28" stroke="#121212" strokeWidth="1.5" fill="none" />
           </svg>
-          <h1>RPDF</h1>
+          <h1>Rana</h1>
         </div>
         <div className="header-actions">
           <PDFUploader onFileSelect={handleFileSelect} />
+          {pdfFile && (
+            <button className="save-button" onClick={handleSavePdf} title="Save PDF with bookmarks">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              Save
+            </button>
+          )}
           <button className="settings-button" aria-label="Settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3" />
