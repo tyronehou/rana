@@ -1,6 +1,6 @@
-# RPDF
+# Rana
 
-**R**ana **PDF** reader - A sleek TypeScript PDF viewer application built with React and Vite, themed after poison dart frogs.
+A sleek TypeScript PDF viewer application built with React and Vite
 
 ## Features
 
