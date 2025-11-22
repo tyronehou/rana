@@ -68,6 +68,21 @@ function App() {
     setBookmarks((prev) => removeFromList(prev))
   }
 
+  const renameBookmark = (id: string, newLabel: string) => {
+    const renameInList = (list: Bookmark[]): Bookmark[] => {
+      return list.map((b) => {
+        if (b.id === id) {
+          return { ...b, label: newLabel }
+        }
+        if (b.children) {
+          return { ...b, children: renameInList(b.children) }
+        }
+        return b
+      })
+    }
+    setBookmarks((prev) => renameInList(prev))
+  }
+
   const toggleExpanded = (id: string) => {
     const toggleInList = (list: Bookmark[]): Bookmark[] => {
       return list.map((b) => {
@@ -184,6 +199,7 @@ function App() {
           bookmarks={bookmarks}
           onAddBookmark={addBookmark}
           onRemoveBookmark={removeBookmark}
+          onRenameBookmark={renameBookmark}
           onToggleExpanded={toggleExpanded}
         />
         <main className="app-main">

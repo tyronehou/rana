@@ -492,6 +492,23 @@ body {
   text-overflow: ellipsis;
 }
 
+.bookmark-edit-input {
+  flex: 1;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #E0E0E0;
+  background-color: #2A2A2A;
+  border: 1px solid #50B480;
+  border-radius: 4px;
+  outline: none;
+  min-width: 0;
+}
+
+.bookmark-edit-input:focus {
+  box-shadow: 0 0 0 2px rgba(80, 180, 128, 0.3);
+}
+
 .bookmark-delete {
   display: flex;
   align-items: center;

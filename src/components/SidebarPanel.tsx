@@ -25,6 +25,7 @@ interface SidebarPanelProps {
   bookmarks: Bookmark[]
   onAddBookmark: (page: number, label?: string) => void
   onRemoveBookmark: (id: string) => void
+  onRenameBookmark: (id: string, newLabel: string) => void
   onToggleExpanded: (id: string) => void
 }
 
@@ -43,6 +44,7 @@ export function SidebarPanel({
   bookmarks,
   onAddBookmark,
   onRemoveBookmark,
+  onRenameBookmark,
   onToggleExpanded,
 }: SidebarPanelProps) {
   const [width, setWidth] = useState(250)
@@ -95,6 +97,7 @@ export function SidebarPanel({
           currentPage={currentPage}
           onPageSelect={onPageSelect}
           onRemoveBookmark={onRemoveBookmark}
+          onRenameBookmark={onRenameBookmark}
           onToggleExpanded={onToggleExpanded}
         />
       default:
@@ -178,10 +181,11 @@ interface BookmarksContentProps {
   currentPage: number
   onPageSelect: (page: number) => void
   onRemoveBookmark: (id: string) => void
+  onRenameBookmark: (id: string, newLabel: string) => void
   onToggleExpanded: (id: string) => void
 }
 
-function BookmarksContent({ bookmarks, currentPage, onPageSelect, onRemoveBookmark, onToggleExpanded }: BookmarksContentProps) {
+function BookmarksContent({ bookmarks, currentPage, onPageSelect, onRemoveBookmark, onRenameBookmark, onToggleExpanded }: BookmarksContentProps) {
   if (bookmarks.length === 0) {
     return (
       <div className="bookmarks-panel">
@@ -200,6 +204,7 @@ function BookmarksContent({ bookmarks, currentPage, onPageSelect, onRemoveBookma
             currentPage={currentPage}
             onPageSelect={onPageSelect}
             onRemoveBookmark={onRemoveBookmark}
+            onRenameBookmark={onRenameBookmark}
             onToggleExpanded={onToggleExpanded}
             level={0}
           />
@@ -214,13 +219,48 @@ interface BookmarkItemProps {
   currentPage: number
   onPageSelect: (page: number) => void
   onRemoveBookmark: (id: string) => void
+  onRenameBookmark: (id: string, newLabel: string) => void
   onToggleExpanded: (id: string) => void
   level: number
 }
 
-function BookmarkItem({ bookmark, currentPage, onPageSelect, onRemoveBookmark, onToggleExpanded, level }: BookmarkItemProps) {
+function BookmarkItem({ bookmark, currentPage, onPageSelect, onRemoveBookmark, onRenameBookmark, onToggleExpanded, level }: BookmarkItemProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState(bookmark.label)
+  const inputRef = useRef<HTMLInputElement>(null)
+
   const hasChildren = bookmark.children && bookmark.children.length > 0
   const isExpanded = bookmark.expanded ?? true
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [isEditing])
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditValue(bookmark.label)
+    setIsEditing(true)
+  }
+
+  const handleSave = () => {
+    const trimmed = editValue.trim()
+    if (trimmed && trimmed !== bookmark.label) {
+      onRenameBookmark(bookmark.id, trimmed)
+    }
+    setIsEditing(false)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave()
+    } else if (e.key === 'Escape') {
+      setEditValue(bookmark.label)
+      setIsEditing(false)
+    }
+  }
 
   return (
     <>
@@ -244,15 +284,27 @@ function BookmarkItem({ bookmark, currentPage, onPageSelect, onRemoveBookmark, o
         ) : (
           <span className="bookmark-expand-placeholder" />
         )}
-        <button
-          className="bookmark-item-content"
-          onClick={() => onPageSelect(bookmark.page)}
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-            <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
-          </svg>
-          <span className="bookmark-label">{bookmark.label}</span>
-        </button>
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            className="bookmark-edit-input"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+          />
+        ) : (
+          <button
+            className="bookmark-item-content"
+            onClick={() => onPageSelect(bookmark.page)}
+            onDoubleClick={handleDoubleClick}
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
+            </svg>
+            <span className="bookmark-label">{bookmark.label}</span>
+          </button>
+        )}
         <button
           className="bookmark-delete"
           onClick={() => onRemoveBookmark(bookmark.id)}
@@ -270,6 +322,7 @@ function BookmarkItem({ bookmark, currentPage, onPageSelect, onRemoveBookmark, o
           currentPage={currentPage}
           onPageSelect={onPageSelect}
           onRemoveBookmark={onRemoveBookmark}
+          onRenameBookmark={onRenameBookmark}
           onToggleExpanded={onToggleExpanded}
           level={level + 1}
         />
