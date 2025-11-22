@@ -65,3 +65,4 @@ Present your implementation in a clear, step-by-step manner:
 If any requirements are unclear or missing, ask clarifying questions before proceeding.
 
 Begin by reading the requirements.md file and then proceed with project creation.
+- Always use descriptive variable names for global variables
