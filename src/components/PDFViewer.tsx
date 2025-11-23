@@ -93,7 +93,7 @@ export function PDFViewer({
 
   useEffect(() => {
     const container = containerRef.current
-    if (!container) return
+    if (!container || continuousMode) return
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
@@ -106,7 +106,7 @@ export function PDFViewer({
 
     container.addEventListener('wheel', handleWheel, { passive: false })
     return () => container.removeEventListener('wheel', handleWheel)
-  }, [onNextPage, onPrevPage])
+  }, [onNextPage, onPrevPage, continuousMode])
 
   if (!file) {
     return (
@@ -129,9 +129,15 @@ export function PDFViewer({
           Next
         </button>
       </div>
-      <div className="pdf-document" ref={containerRef}>
+      <div className={`pdf-document ${continuousMode ? 'pdf-document--continuous' : ''}`} ref={containerRef}>
         <Document file={file} onLoadSuccess={handleLoadSuccess}>
-          <Page pageNumber={pageNumber} />
+          {continuousMode ? (
+            Array.from({ length: numPages }, (_, i) => (
+              <Page key={i + 1} pageNumber={i + 1} />
+            ))
+          ) : (
+            <Page pageNumber={pageNumber} />
+          )}
         </Document>
       </div>
       <div className="display-mode-container">

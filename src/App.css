@@ -201,6 +201,20 @@ body {
   overflow: hidden;
 }
 
+.pdf-document--continuous {
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #2a2a2a;
+}
+
+.pdf-document--continuous .react-pdf__Page {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
 .react-pdf__Page {
   max-width: 100%;
 }
