@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
@@ -77,6 +77,7 @@ export function PDFViewer({
   onNextPage,
 }: PDFViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [continuousMode, setContinuousMode] = useState(false)
 
   const handleLoadSuccess = async (pdf: PDFDocumentProxy) => {
     onDocumentLoad(pdf.numPages)
@@ -132,6 +133,26 @@ export function PDFViewer({
         <Document file={file} onLoadSuccess={handleLoadSuccess}>
           <Page pageNumber={pageNumber} />
         </Document>
+      </div>
+      <div className="display-mode-container">
+        <span className="display-mode-label">
+          display mode: {continuousMode ? 'continuous' : 'single page'}
+        </span>
+        <button
+          className={`display-mode-toggle ${continuousMode ? 'display-mode-toggle--active' : ''}`}
+          onClick={() => setContinuousMode(!continuousMode)}
+          title={continuousMode ? 'Single page view' : 'Continuous view'}
+        >
+          {continuousMode ? (
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M4 4h16v16H4V4zm2 2v12h12V6H6z" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M4 2h16v6H4V2zm0 8h16v6H4v-6zm0 8h16v6H4v-6z" />
+            </svg>
+          )}
+        </button>
       </div>
     </div>
   )

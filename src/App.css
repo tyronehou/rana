@@ -210,6 +210,47 @@ body {
   height: auto !important;
 }
 
+.display-mode-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 100;
+}
+
+.display-mode-label {
+  font-size: 1rem;
+  color: #7FD0B2;
+  text-transform: capitalize;
+}
+
+.display-mode-toggle {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1E1E1E;
+  border: 1px solid #50B480;
+  border-radius: 50%;
+  color: #7FD0B2;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+.display-mode-toggle:hover {
+  background-color: #50B480;
+  color: #121212;
+  transform: scale(1.1);
+}
+
+.display-mode-toggle--active {
+  background-color: #50B480;
+  color: #121212;
+}
+
 /* Sidebar */
 .sidebar {
   display: flex;
