@@ -1,0 +1,5 @@
+Move the svgs to their own files in a dedicated resources folder
+Add ability to magnify the pdf without magnifying the interface (ctrl scroll wheel)
+Have ctrl s save the pdf
+Add notes functionality + sidebar
+Add highlight functionality with colors and color wheel
