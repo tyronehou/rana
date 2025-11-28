@@ -4,7 +4,7 @@ A sleek TypeScript PDF viewer application built with React and Vite
 
 ## Features
 
-- Upload PDF files from your local directory
+- Open PDF files from your local directory
 - View PDF documents in a responsive viewport
 - Navigate between pages with previous/next controls
 - Modern, dark-themed UI
@@ -51,7 +51,7 @@ npm run preview
 
 ## Usage
 
-1. Click the "Upload PDF" button in the header
+1. Click the "Open PDF" button in the header
 2. Select a PDF file from your local filesystem
 3. Use the Previous/Next buttons to navigate between pages
 

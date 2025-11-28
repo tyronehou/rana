@@ -1,9 +1,14 @@
-import { useState } from 'react'
-import { PDFUploader } from './components/PDFUploader'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { PDFUploader, PDFUploaderRef } from './components/PDFUploader'
 import { PDFViewer } from './components/PDFViewer'
 import { Sidebar } from './components/Sidebar'
 import { SidebarPanel, PanelType, Bookmark } from './components/SidebarPanel'
 import { addBookmarksToPdf, downloadPdf } from './utils/pdfBookmarks'
+import { FrogIcon, ZoomOutIcon, ZoomInIcon, ZoomResetIcon, SaveIcon, SettingsIcon } from './resources/svg'
+
+const MIN_ZOOM = 0.25
+const MAX_ZOOM = 3.0
+const ZOOM_STEP = 0.25
 
 function App() {
   const [pdfFile, setPdfFile] = useState<File | null>(null)
@@ -11,7 +16,15 @@ function App() {
   const [pageNumber, setPageNumber] = useState<number>(1)
   const [numPages, setNumPages] = useState<number>(0)
   const [activePanel, setActivePanel] = useState<PanelType>(null)
+  const [lastOpenedPanel, setLastOpenedPanel] = useState<Exclude<PanelType, null>>('bookmarks')
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
+  const [zoom, setZoom] = useState<number>(1.0)
+  const [pdfTitle, setPdfTitle] = useState<string>('')
+  const [showProperties, setShowProperties] = useState(false)
+  const [isEditingZoom, setIsEditingZoom] = useState(false)
+  const [zoomInputValue, setZoomInputValue] = useState('')
+  const pdfUploaderRef = useRef<PDFUploaderRef>(null)
+  const zoomInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = (file: File, handle: FileSystemFileHandle | null) => {
     setPdfFile(file)
@@ -19,6 +32,7 @@ function App() {
     setPageNumber(1)
     setNumPages(0)
     setBookmarks([])
+    setPdfTitle('')
   }
 
   const addBookmark = (page: number, label?: string) => {
@@ -107,6 +121,10 @@ function App() {
     setBookmarks(outlineBookmarks)
   }
 
+  const handleTitleLoad = (title: string) => {
+    setPdfTitle(title)
+  }
+
   const goToPrevPage = () => {
     setPageNumber((prev) => Math.max(prev - 1, 1))
   }
@@ -115,7 +133,153 @@ function App() {
     setPageNumber((prev) => Math.min(prev + 1, numPages))
   }
 
+  const zoomIn = useCallback(() => {
+    setZoom((prev) => Math.min(prev + ZOOM_STEP, MAX_ZOOM))
+  }, [])
+
+  const zoomOut = useCallback(() => {
+    setZoom((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM))
+  }, [])
+
+  const handleZoomChange = useCallback((delta: number) => {
+    setZoom((prev) => Math.min(Math.max(prev + delta, MIN_ZOOM), MAX_ZOOM))
+  }, [])
+
+  const handleZoomClick = () => {
+    setIsEditingZoom(true)
+    setZoomInputValue(Math.round(zoom * 100).toString())
+  }
+
+  const handleZoomInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setZoomInputValue(e.target.value)
+  }
+
+  const handleZoomInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const newZoomPercent = parseInt(zoomInputValue, 10)
+      if (!isNaN(newZoomPercent) && newZoomPercent >= MIN_ZOOM * 100 && newZoomPercent <= MAX_ZOOM * 100) {
+        setZoom(newZoomPercent / 100)
+      }
+      setIsEditingZoom(false)
+    } else if (e.key === 'Escape') {
+      setIsEditingZoom(false)
+    }
+  }
+
+  const handleZoomInputBlur = () => {
+    const newZoomPercent = parseInt(zoomInputValue, 10)
+    if (!isNaN(newZoomPercent) && newZoomPercent >= MIN_ZOOM * 100 && newZoomPercent <= MAX_ZOOM * 100) {
+      setZoom(newZoomPercent / 100)
+    }
+    setIsEditingZoom(false)
+  }
+
+  const handleZoomReset = () => {
+    setZoom(1.0)
+  }
+
+  const toggleLastPanel = useCallback(() => {
+    if (activePanel !== null) {
+      setActivePanel(null)
+    } else {
+      setActivePanel(lastOpenedPanel)
+    }
+  }, [activePanel, lastOpenedPanel])
+
+  useEffect(() => {
+    if (isEditingZoom && zoomInputRef.current) {
+      zoomInputRef.current.focus()
+      zoomInputRef.current.select()
+    }
+  }, [isEditingZoom])
+
+  const handlePrintPdf = () => {
+    if (!pdfFile) return
+
+    const url = URL.createObjectURL(pdfFile)
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = 'none'
+    iframe.src = url
+    document.body.appendChild(iframe)
+
+    iframe.onload = () => {
+      try {
+        const iframeWindow = iframe.contentWindow
+        if (iframeWindow) {
+          // Clean up after print dialog is closed
+          iframeWindow.addEventListener('afterprint', () => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe)
+            }
+            URL.revokeObjectURL(url)
+          })
+
+          iframeWindow.focus()
+          iframeWindow.print()
+        }
+      } catch (error) {
+        console.error('Print failed:', error)
+        // Clean up on error
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe)
+        }
+        URL.revokeObjectURL(url)
+      }
+    }
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === '=' || e.key === '+') {
+          e.preventDefault()
+          zoomIn()
+        } else if (e.key === '-') {
+          e.preventDefault()
+          zoomOut()
+        } else if (e.key === 'o' || e.key === 'O') {
+          e.preventDefault()
+          pdfUploaderRef.current?.openFilePicker()
+        } else if (e.key === 's' || e.key === 'S') {
+          e.preventDefault()
+          if (pdfFile) {
+            handleSavePdf()
+          }
+        } else if (e.key === 'p' || e.key === 'P') {
+          e.preventDefault()
+          if (pdfFile) {
+            handlePrintPdf()
+          }
+        } else if (e.key === 'b' || e.key === 'B') {
+          e.preventDefault()
+          if (pdfFile) {
+            toggleLastPanel()
+          }
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [zoomIn, zoomOut, pdfFile, toggleLastPanel])
+
+  useEffect(() => {
+    if (pdfTitle) {
+      document.title = `${pdfTitle} - Rana`
+    } else {
+      document.title = 'Rana'
+    }
+  }, [pdfTitle])
+
   const handlePanelToggle = (panel: PanelType) => {
+    if (panel !== null) {
+      setLastOpenedPanel(panel)
+    }
     setActivePanel(panel)
   }
 
@@ -127,60 +291,76 @@ function App() {
     <div className="app">
       <header className="app-header">
         <div className="app-logo">
-          <svg
-            className="frog-icon"
-            viewBox="0 0 64 64"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            {/* Body */}
-            <ellipse cx="32" cy="38" rx="20" ry="16" fill="#50B480" />
-            {/* Head */}
-            <ellipse cx="32" cy="24" rx="16" ry="12" fill="#50B480" />
-            {/* Left eye bump */}
-            <circle cx="22" cy="16" r="8" fill="#50B480" />
-            {/* Right eye bump */}
-            <circle cx="42" cy="16" r="8" fill="#50B480" />
-            {/* Left eye */}
-            <circle cx="22" cy="15" r="5" fill="#121212" />
-            <circle cx="23" cy="14" r="2" fill="#7FD0B2" />
-            {/* Right eye */}
-            <circle cx="42" cy="15" r="5" fill="#121212" />
-            <circle cx="43" cy="14" r="2" fill="#7FD0B2" />
-            {/* Spots */}
-            <circle cx="26" cy="32" r="3" fill="#121212" />
-            <circle cx="38" cy="30" r="2.5" fill="#121212" />
-            <circle cx="32" cy="42" r="3" fill="#121212" />
-            <circle cx="24" cy="44" r="2" fill="#121212" />
-            <circle cx="40" cy="44" r="2" fill="#121212" />
-            {/* Front legs */}
-            <ellipse cx="16" cy="48" rx="6" ry="4" fill="#50B480" />
-            <ellipse cx="48" cy="48" rx="6" ry="4" fill="#50B480" />
-            {/* Back legs */}
-            <ellipse cx="12" cy="42" rx="5" ry="8" fill="#50B480" transform="rotate(-20 12 42)" />
-            <ellipse cx="52" cy="42" rx="5" ry="8" fill="#50B480" transform="rotate(20 52 42)" />
-            {/* Mouth line */}
-            <path d="M24 28 Q32 32 40 28" stroke="#121212" strokeWidth="1.5" fill="none" />
-          </svg>
-          <h1>Rana</h1>
+          <FrogIcon />
+          <div className="app-title">
+            <h1>Rana</h1>
+            {pdfTitle && (
+              <span
+                className="pdf-title pdf-title-clickable"
+                onClick={() => setShowProperties(true)}
+                title="Click to view document properties"
+              >
+                {pdfTitle}
+              </span>
+            )}
+          </div>
         </div>
         <div className="header-actions">
-          <PDFUploader onFileSelect={handleFileSelect} />
+          {pdfFile && (
+            <div className="zoom-controls">
+              <button
+                className="zoom-button"
+                onClick={handleZoomReset}
+                title="Reset zoom to 100%"
+              >
+                <ZoomResetIcon />
+              </button>
+              <button
+                className="zoom-button"
+                onClick={zoomOut}
+                disabled={zoom <= MIN_ZOOM}
+                title="Zoom out (Ctrl -)"
+              >
+                <ZoomOutIcon />
+              </button>
+              {isEditingZoom ? (
+                <input
+                  ref={zoomInputRef}
+                  type="text"
+                  className="zoom-input"
+                  value={zoomInputValue}
+                  onChange={handleZoomInputChange}
+                  onKeyDown={handleZoomInputKeyDown}
+                  onBlur={handleZoomInputBlur}
+                />
+              ) : (
+                <span
+                  className="zoom-level zoom-level-clickable"
+                  onClick={handleZoomClick}
+                  title="Click to enter custom zoom"
+                >
+                  {Math.round(zoom * 100)}%
+                </span>
+              )}
+              <button
+                className="zoom-button"
+                onClick={zoomIn}
+                disabled={zoom >= MAX_ZOOM}
+                title="Zoom in (Ctrl +)"
+              >
+                <ZoomInIcon />
+              </button>
+            </div>
+          )}
+          <PDFUploader ref={pdfUploaderRef} onFileSelect={handleFileSelect} />
           {pdfFile && (
             <button className="save-button" onClick={handleSavePdf} title="Save PDF with bookmarks">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                <polyline points="17 21 17 13 7 13 7 21" />
-                <polyline points="7 3 7 8 15 8" />
-              </svg>
+              <SaveIcon />
               Save
             </button>
           )}
           <button className="settings-button" aria-label="Settings">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
+            <SettingsIcon />
           </button>
         </div>
       </header>
@@ -207,10 +387,16 @@ function App() {
             file={pdfFile}
             pageNumber={pageNumber}
             numPages={numPages}
+            zoom={zoom}
             onDocumentLoad={handleDocumentLoad}
             onOutlineLoad={handleOutlineLoad}
+            onTitleLoad={handleTitleLoad}
             onPrevPage={goToPrevPage}
             onNextPage={goToNextPage}
+            onZoomChange={handleZoomChange}
+            onPageChange={setPageNumber}
+            showProperties={showProperties}
+            onToggleProperties={setShowProperties}
           />
         </main>
       </div>

@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
+import { AddBookmarkIcon, CloseIcon, ChevronDownIcon, ChevronRightIcon, BookmarkIcon } from '../resources/svg'
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
 
@@ -116,16 +117,11 @@ export function SidebarPanel({
               title={`Add Bookmark (Page ${currentPage})`}
               onClick={() => onAddBookmark(currentPage)}
             >
-              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-                <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z" />
-                <path d="M11 7h2v2h2v2h-2v2h-2v-2H9V9h2z" />
-              </svg>
+              <AddBookmarkIcon />
             </button>
           )}
           <button className="sidebar-panel-close" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-            </svg>
+            <CloseIcon />
           </button>
         </div>
       </div>
@@ -273,13 +269,7 @@ function BookmarkItem({ bookmark, currentPage, onPageSelect, onRemoveBookmark, o
             className="bookmark-expand"
             onClick={() => onToggleExpanded(bookmark.id)}
           >
-            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
-              {isExpanded ? (
-                <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
-              ) : (
-                <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
-              )}
-            </svg>
+            {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
           </button>
         ) : (
           <span className="bookmark-expand-placeholder" />
@@ -299,9 +289,7 @@ function BookmarkItem({ bookmark, currentPage, onPageSelect, onRemoveBookmark, o
             onClick={() => onPageSelect(bookmark.page)}
             onDoubleClick={handleDoubleClick}
           >
-            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-              <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
-            </svg>
+            <BookmarkIcon />
             <span className="bookmark-label">{bookmark.label}</span>
           </button>
         )}
@@ -310,9 +298,7 @@ function BookmarkItem({ bookmark, currentPage, onPageSelect, onRemoveBookmark, o
           onClick={() => onRemoveBookmark(bookmark.id)}
           title="Remove bookmark"
         >
-          <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg>
+          <CloseIcon />
         </button>
       </div>
       {hasChildren && isExpanded && bookmark.children!.map((child) => (
