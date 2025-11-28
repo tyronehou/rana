@@ -1,13 +1,17 @@
 # Rana
 
-A sleek TypeScript PDF viewer application built with React and Vite
+A sleek TypeScript PDF viewer application built with React and Vite. Available as both a web application and a native desktop app powered by Electron.
 
 ## Features
 
-- Open PDF files from your local directory
-- View PDF documents in a responsive viewport
-- Navigate between pages with previous/next controls
-- Modern, dark-themed UI
+- 📄 Open and view PDF documents
+- 🔖 Bookmark management and navigation
+- 🖼️ Thumbnail preview panel
+- 🔍 Zoom controls with keyboard shortcuts
+- 🖨️ Print support (Ctrl+P)
+- ⌨️ Comprehensive keyboard shortcuts
+- 🖥️ **NEW: Native desktop application (Electron)**
+- 🌙 Modern, dark-themed UI
 
 ## Tech Stack
 
@@ -15,6 +19,8 @@ A sleek TypeScript PDF viewer application built with React and Vite
 - **TypeScript** - Type safety
 - **Vite** - Build tool and dev server
 - **react-pdf** - PDF rendering (powered by PDF.js)
+- **Electron** - Desktop application framework
+- **pdf-lib** - PDF manipulation
 
 ## Getting Started
 
@@ -28,32 +34,58 @@ A sleek TypeScript PDF viewer application built with React and Vite
 ```bash
 # Install dependencies
 npm install
+```
 
+### Running the Application
+
+#### Web Version
+```bash
 # Start development server
 npm run dev
 ```
-
 The app will be available at `http://localhost:5000`
 
-### Build for Production
+#### Desktop Version (Electron)
+```bash
+# Start Electron app
+npm run dev:electron
+```
+Opens in a native desktop window
 
+### Building for Production
+
+#### Web Build
 ```bash
 npm run build
 ```
+Output: `dist/` directory
 
-The build output will be in the `dist/` directory.
-
-### Preview Production Build
-
+#### Desktop Build (Electron)
 ```bash
-npm run preview
+npm run build:electron
 ```
+Output: `release/` directory with platform-specific installers
+
+For detailed Electron information, see [ELECTRON.md](./ELECTRON.md)
 
 ## Usage
 
 1. Click the "Open PDF" button in the header
 2. Select a PDF file from your local filesystem
-3. Use the Previous/Next buttons to navigate between pages
+3. Navigate using Previous/Next buttons or scroll in continuous mode
+4. Use the sidebar to view bookmarks and thumbnails
+5. Add, edit, and remove bookmarks
+6. Save PDF with bookmarks embedded
+
+### Keyboard Shortcuts
+
+- `Ctrl/Cmd + O` - Open PDF file
+- `Ctrl/Cmd + S` - Save PDF with bookmarks
+- `Ctrl/Cmd + P` - Print PDF
+- `Ctrl/Cmd + B` - Toggle sidebar panel
+- `Ctrl/Cmd + +` - Zoom in
+- `Ctrl/Cmd + -` - Zoom out
+- `Ctrl/Cmd + Scroll` - Zoom with mouse wheel
 
 ## Project Structure
 
